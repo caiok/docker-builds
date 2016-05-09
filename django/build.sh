@@ -38,13 +38,25 @@ source /etc/profile.d/custom.sh
 # -------------- #
 
 # -------------- #
+# EPEL + Update
 yum update -y
 yum install -y epel-release
 yum update -y
+# -------------- #
 
+# -------------- #
+# Installing Python
 yum install -y python-pip
 pip install --upgrade pip
 pip install --upgrade django
+# -------------- #
+
+# -------------- #
+# PostgreSQL Install
+yum install -y \
+    postgresql \
+    postgresql-server \
+    postgresql-contrib
 # -------------- #
 
 # -------------- #
