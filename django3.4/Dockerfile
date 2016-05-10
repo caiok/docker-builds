@@ -1,8 +1,11 @@
-FROM django:python3
+FROM django:1.9-python3
 MAINTAINER CaioK
 
 ADD *.sh /root/
-RUN /bin/bash /root/build.sh
+
+VOLUME /var/lib/mysql /repo
+
+RUN /root/build.sh
 
 EXPOSE 80 3306
 

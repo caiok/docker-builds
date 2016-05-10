@@ -14,6 +14,8 @@ cat >> /etc/profile.d/custom.sh << EOF
 alias rm='rm -i'
 alias cp='cp -i'
 alias mv='mv -i'
+
+export PS1='\[\e[0;32m\][[${debian_chroot:+($debian_chroot)}\u@\h:\w]]\$\[\e[0m\] '
 EOF
 # -------------- #
 
@@ -40,25 +42,55 @@ source /etc/profile.d/custom.sh
 # -------------- #
 # Installations
 apt-get update -y
-echo -e 'When asked, \e[31minsert "test" as root password\e[0m. Press enter to resume...' ; read RESP
-apt-get install -y mysql-client mysql-server
 # -------------- #
 
 # -------------- #
-# service mysql start
-#
-# #mysqladmin -u root -p'$oldrootpass' password '$newrootpass'
-# mysqladmin -u root -p'' password 'test'
-#
-# mysql -u root -ptest << EOF
-# create database test;
-# create user 'test'@'%' identified by 'test';
-# grant all on test.* to 'test' identified by 'test';
-# EOF
-#
-# service mysql stop
+# Old MySQL installation (from official repository)
+#debconf-set-selections <<< 'mysql-server mysql-server/root_password password test'
+#debconf-set-selections <<< 'mysql-server mysql-server/root_password_again password test'
+#apt-get install -y mysql-client mysql-server
 # -------------- #
 
+# -------------- #
+# MySQL installation (copied from the "mysql" docker image Dockerfile)
+# gpg: key 5072E1F5: public key "MySQL Release Engineering <mysql-build@oss.oracle.com>" imported
+apt-key adv --keyserver ha.pool.sks-keyservers.net --recv-keys A4A9406876FCBD3C456770C88C718D3B5072E1F5
+
+export MYSQL_MAJOR=5.6
+export MYSQL_VERSION=5.6.30-1debian8
+
+echo -e "\ndeb http://repo.mysql.com/apt/debian/ jessie mysql-${MYSQL_MAJOR}" > /etc/apt/sources.list.d/mysql.list
+apt-get update -y
+
+debconf-set-selections <<< 'mysql-community-server mysql-community-server/root-pass password test'
+debconf-set-selections <<< 'mysql-community-server mysql-community-server/re-root-pass password test'
+apt-get install -y mysql-client mysql-server="${MYSQL_VERSION}"
+# -------------- #
+
+# -------------- #
+# MySQL initialization
+chown -R mysql:mysql /var/lib/mysql
+mysql_install_db
+
+service mysql start
+
+# Give "debian-sys-maint" user access privileges 
+debian_maint_password=$(cat /etc/mysql/debian.cnf | grep password | awk '{print $3}' | head -n1)
+mysql -u root -ptest -c <<< "GRANT ALL PRIVILEGES ON *.* TO 'debian-sys-maint'@'%' IDENTIFIED BY '${debian_maint_password}';"
+
+service mysql status
+
+mysql_upgrade -u root -ptest
+
+# Create "test" user and "test" database
+mysql -u root -ptest << EOF
+create database test;
+create user 'test'@'%' identified by 'test';
+grant all on test.* to 'test' identified by 'test';
+EOF
+
+service mysql stop
+# -------------- #
 
 # -------------- #
 # Let's check that all is ok
