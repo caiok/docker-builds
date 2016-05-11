@@ -1,12 +1,12 @@
 FROM django:1.9-python3
 MAINTAINER CaioK
 
-ADD *.sh /root/
+ADD * /root/
 
-VOLUME /var/lib/mysql /repo
+VOLUME /repo
 
 RUN /root/build.sh
 
-EXPOSE 80 3306
+EXPOSE 22 80 3306
 
 ENTRYPOINT /root/run.sh

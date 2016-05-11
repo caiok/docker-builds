@@ -4,7 +4,8 @@
 # ...
 
 # Services start
+service ssh start
 service mysql start
 
 # Run Bash
-/bin/bash
+/bin/bash -l

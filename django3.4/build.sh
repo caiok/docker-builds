@@ -1,5 +1,12 @@
 #!/bin/bash
+
 # Warning: this script is Debian based
+
+# Tip: if the build fails, the best way to do some debug is to modify
+#      this script adding an "exit 0" before the failing command,
+#      then create a container based on the image created and running it
+#      with "docker run". At this time, it will be easy to reproduce the
+#      issue and make the needed changes. 
 
 # -------------- #
 # Set bash to stop the script if a command terminates with an error
@@ -42,6 +49,17 @@ source /etc/profile.d/custom.sh
 # -------------- #
 # Installations
 apt-get update -y
+apt-get install -y nano less
+# -------------- #
+
+# -------------- #
+# SSH Server installation (useful for scp and sshfs)
+#   Copied from: https://docs.docker.com/engine/examples/running_ssh_service/
+apt-get install -y --force-yes openssh-server
+mkdir /var/run/sshd
+echo 'root:test' | chpasswd
+sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 # -------------- #
 
 # -------------- #
