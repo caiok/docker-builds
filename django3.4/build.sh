@@ -82,15 +82,31 @@ apt-get update -y
 
 debconf-set-selections <<< 'mysql-community-server mysql-community-server/root-pass password test'
 debconf-set-selections <<< 'mysql-community-server mysql-community-server/re-root-pass password test'
-apt-get install -y mysql-client mysql-server="${MYSQL_VERSION}"
+apt-get install -y mysql-client mysql-server="${MYSQL_VERSION}" mysqltuner
 # -------------- #
 
 # -------------- #
 # MySQL initialization
-chown -R mysql:mysql /var/lib/mysql
+cp -vf /root/my.cnf /etc/mysql/my.cnf
+chmod 644 /etc/mysql/my.cnf
+
+mkdir -v /db
+mkdir -v /db/mysql
+mkdir -v /db/mysql/data
+mkdir -v /db/mysql/temp
+mkdir -v /db/mysql/log
+mkdir -v /db/mysql/run
+mkdir -v /db/mysql/datalog
+mkdir -v /db/mysql/datalog/binlog
+mkdir -v /db/mysql/datalog/innolog
+mkdir -v /db/mysql/datalog/relaylog
+chown -R mysql:mysql /db
+
 mysql_install_db
 
 service mysql start
+
+/usr/bin/mysqladmin -u root password 'test'
 
 # Give "debian-sys-maint" user access privileges 
 debian_maint_password=$(cat /etc/mysql/debian.cnf | grep password | awk '{print $3}' | head -n1)
@@ -111,13 +127,19 @@ service mysql stop
 # -------------- #
 
 # -------------- #
+# Some housekeeping...
+apt-get autoremove -y
+apt-get clean
+rm -rf /var/lib/mysql
+rm -rf /var/lib/apt/lists/*
+#rm -rf /usr/share/man/*
+#rm -rf /usr/share/doc/*
+#find /usr/share/locale -mindepth 1 -maxdepth 1 | grep -v '/usr/share/locale/en' | xargs rm -rf
+# -------------- #
+
+# -------------- #
 # Let's check that all is ok
 python -V
 python -c "import django; print('Django Version: ' + django.get_version())"
 mysql -V
-# -------------- #
-
-# -------------- #
-# Some housekeeping...
-apt-get clean
 # -------------- #

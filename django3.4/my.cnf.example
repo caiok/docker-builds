@@ -1,0 +1,371 @@
+[mysqld]
+
+init_connect = 'SET autocommit=0'
+#transaction-isolation = READ-COMMITTED
+
+# directories
+#datadir = /db/mysql/data
+
+# logging (be very careful with the "log" directive!)
+# log = /rnd/apps/servers/mysql/log/mysqld.log
+##log-error=/var/log/mysql/mysqld.log
+
+
+# chrooted server
+#chroot = /rnd/apps/mmfg/mysqld-chroot
+
+# userid, ip, port
+#user = mysqld
+user = mysql
+# bind-address = 0.0.0.0
+port = 3306
+
+# security-related options
+safe-user-create
+#skip-show-database
+skip-symbolic-links
+local-infile = 0
+
+# to use with "old passwords" disable secure_auth and enable
+# old_passwords for clients using the mysqlclient compat. package
+# secure-auth
+#old_passwords=1
+
+# Path
+basedir                     = /db/mysql
+datadir                     = /db/mysql/data
+tmpdir                      = /db/mysql/temp
+log-error                   = /db/mysql/log/mysql.err
+log-bin                     = /db/mysql/datalog/binlog/mysql-bin
+
+#attivato per debug
+log			    = /rnd/apps/servers/mysql/log/general.log
+
+master-info-file            = /db/mysql/datalog/binlog/mysql-master.info
+relay-log                   = /db/mysql/datalog/relaylog/mysql-relay-bin
+relay-log-index             = /db/mysql/datalog/relaylog/mysql-relay-bin.index
+relay-log-info-file         = /db/mysql/datalog/relaylog/mysql-relay-log.info
+pid-file                    = /db/mysql/mysql.pid
+socket                      = /tmp/mysql.sock
+
+innodb_data_home_dir        = /db/mysql/data
+innodb_log_group_home_dir   = /db/mysql/datalog/innolog
+innodb_data_file_path       = ibdata1:10M:autoextend
+
+# Slow Query Log
+slow_query_log = 1
+long_query_time = 10
+slow_query_log_file         = /db/mysql/log/mysql-slow.log
+
+# resource-related directives
+skip-external-locking
+
+# ----------------------------------------------------------------------
+
+# transaction_isolation
+# REPEATABLE-READ: Select fatte in momenti diversi restituiscono sempre lo
+#   stesso risultato (come sul server RFID). E` il default.
+# READ-COMMITTED: Le select leggono sempre cio` che e` stato committato
+#   (e` il comportamento che abbiamo sempre usato su mysql 4.1.18)
+# READ-UNCOMMITTED: Le select leggono qualunque cosa che sia stato scritto
+#   (e` per questo chiamato "dirty-read")
+# SERIALIZABLE: Questo livello e` un po' come REPETABLE-READ, con la differenza
+#   che Innodb converte ogni select come "SELECT ... LOCK IN SHARE MODE"
+transaction_isolation = READ-COMMITTED
+
+# binlog-format
+# - STATEMENT causes logging to be statement based.
+# - ROW causes logging to be row based.
+# - MIXED causes logging to use mixed format. 
+# Il default e` STATEMENT, ma a causa di un bug di mysql (http://bugs.mysql.com/bug.php?id=47842)
+# dobbiamo usare ROW (riferimento: https://confluence.atlassian.com/display/JIRA/JIRA+Cannot+Create+Issues+when+Using+MySQL+with+Binary+Logging)
+binlog-format = ROW
+
+# Database da ignorare nel Binlog
+# Attenzione! Se vengono create delle join tra i db replicati e quelli ignorati
+# la replica andra` in crash! Meglio quindi non rischiare...
+#binlog_ignore_db = test
+
+# ----------------------------------------------------------------------
+
+# RETE
+
+# net_buffer_length, max_allowed_packet: dimensione minima e massima
+# di un blocco dati passato tra client e server.
+net_buffer_length = 2K
+#Lauro_2015-08-03#
+#max_allowed_packet = 1M
+max_allowed_packet = 32M
+
+# ----------------------------------------------------------------------
+
+# max_connections
+# Indica il numero massimo di connessioni simultanee permesse. Ponderarlo bene in quanto come si vede 
+# nella formula del calcolo della memoria utilizzata questa variabile è un moltiplicatore di molte 
+# altre variabili. Se si aumenta questo valore è necessario considerare che incrementerà la necessita 
+# di fd aperti da mysqld, quindi se si supera il limite attuato dal OS di fd aperti, sarà necessario 
+# inoltre avviare mysqld con l'opzione --open-files-limit=#N, in modo che lanci ulimit -N all'avvio.
+max_connections = 640
+
+# back_log
+# Connessioni in attesa di essere servite. Serve come coda di attesa nel caso arrivino molte connessioni
+# in un breve periodo di tempo (aumentarlo se si verificano dei "connection refused")
+back_log = 100
+
+# table_cache (divenuta table_open_cache dalla 5.1.3) [1-524288]
+# Indica il numero massimo di fd utilizzati da mysqld per i file delle tavole. Si consideri 
+# che ogni thread apre le tavole in modo distinti (ad eccezione degli indici). Perciò per MyISAM 
+# ad esempio se due thread aprono la stessa tavola verranno utilizzati 5 fd (thread1: .MYD e .frm, 
+# thread2: .MYD e .frm, per entrambi MYI). Esiste la seguente relazione tra questa variabile e 
+# max_connections: table_cache dovrebbe essere almeno uguale a max_connections * N, dove N è il 
+# numero di tabelle massime per una query in JOIN. Se si aumenta questo valore è necessario considerare 
+# che incrementerà la necessita di fd aperti da mysqld, quindi se si supera il limite attuato dal OS di 
+# fd aperti, sarà necessario inoltre avviare mysqld con l'opzione --open-files-limit=#N, in modo che lanci ulimit -N all'avvio.
+# NOTA: l'articolo http://www.mysqlperformanceblog.com/2009/11/16/table_cache-negative-scalability/ indica
+#       che se si eccede il 64 le performance peggiorano.
+table_cache = 2048
+table_open_cache = 2048		# Dalla 5.1.3
+
+
+# thread_cache_size [0-16384] Indica il numero di thread da mantenere nella cache in modo di riutilizzarli. 
+# Impostare almeno a 16. L'obiettivo è quello di non far generare nuovi thread durante la normale esecuzione del server.
+# N.B.: Aumentare se il cache hit rate è elevato, calcolandolo nel seguente modo:
+# 100 - ((Threads_created/Connections) x 100)
+thread_cache_size = 16
+
+#myisam_block_size = 4K
+
+# group_concat_max_len
+# Quanti risultati presentare nel group_concat (default 1024) 
+group_concat_max_len = 2097152
+
+# ----------------------------------------------------------------------
+
+# REPLICATION
+
+# server-id
+# In congiunzione con log-bin = [path], e` tutto cio` che serve per istrire
+# un master. Gli slave dovranno riferirsi al suo ID
+server-id=1
+
+# ----------------------------------------------------------------------
+
+# MEMORIA
+
+# query_cache_size 
+# Molto utile nel caso non si abbia un livello applicativo di cache. Deve essere maggiore di 50KB per 
+# mantenere almeno la propria struttura, ma non troppo grande in quanto la sua gestione può diventare 
+# eccessivamente costosa. Dai 32MB a 512MB sono valori sensati.
+# N.B.: Aumentare il valore nel caso la variabile Qcache_lowmem_prunes aumenti rapidamente, diminuirlo se non aumenta mai.
+query_cache_size = 512M
+
+# query_cache_limit
+# Indica il limite di memoria massimo utilizzato da un query oltre il quale non viene inserita in cache.
+# N.B.: Aumentare il valore di questa variabile nel caso Qcache_not_cached cresca velocemente 
+# (considerando che potrebbe anche essere dovuto all'indisponibilità di memoria oltre a query_cache_size).
+query_cache_limit = 128M
+
+# query_cache_min_res_unit Indica la dimensione delle porzioni di memoria allocate per volta.
+# N.B.: Se Qcache_free_blocks/Qcache_total_blocks è un numero elevato (distante da 0) aumentare il valore della variabile.
+# * The default value of query_cache_min_res_unit is 4KB. This should be adequate for most cases.
+#   If you have a lot of queries with small results, the default block size may lead to memory fragmentation, 
+#   as indicated by a large number of free blocks. Fragmentation can force the query cache to prune (delete) 
+#   queries from the cache due to lack of memory. In this case, you should decrease the value of query_cache_min_res_unit.
+#   The number of free blocks and queries removed due to pruning are given by the values of the Qcache_free_blocks and
+#   Qcache_lowmem_prunes status variables.
+# * If most of your queries have large results (check the Qcache_total_blocks and Qcache_queries_in_cache status variables),
+#   you can increase performance by increasing query_cache_min_res_unit. However, be careful to not make it too large. 
+query_cache_min_res_unit = 16K
+
+# read_buffer_size
+# Un buffer allocato per ogni thread che ha la necessità di effettuare una read sequenziale
+# N.B.: Valori consigliati da 1MB a 6MB, in quanto se si eccede si rischia di allocare un buffer 
+# elevato di memoria per una query col parametro LIMIT, quindi inutile. Meglio aumentare il parametro 
+# prima della query, a livello locale
+read_buffer_size = 1M
+
+# read_rnd_buffer_size
+# Un buffer allocato per ogni thread che ha la necessità di effettuare una read ordinata
+# N.B.: Valori consigliati da 1MB a 6MB, in quanto se si eccede si rischia di allocare un buffer elevato di memoria 
+# per una query col parametro LIMIT, quindi inutile. Meglio aumentare il parametro prima della query, a livello locale
+# Nota: MM ha 32M
+read_rnd_buffer_size = 32M
+
+# sort_buffer_size 
+# Se vengono effettuate raramente query che necessitano ordinamento (comandi ORDER BY e GROUP BY), 
+# allora questo parametro è meglio se impostato globalmente basso (ad esempio un valore di alcune 
+# decine di KB va benissimo) e risettato prima di un'operazione di sort attraverso una modifica locale. 
+# In caso contrario sarà meglio aumentare questo valore in modo che le operazioni di sort possano un numero 
+# adatto di passaggi sort merge (variabile Sort_merge_passes). Valori tipicamente buoni sono tra i 75 e i 250 KB.
+# N.B.: Molto meglio fare 1000 passaggi sort merge che far allocare a mysql 30MB di memoria!!!
+# Per questo i valori sono così bassi
+# Nota: MM ha 16M
+sort_buffer_size = 16M
+
+# join_buffer_size
+# Indica la dimensione del buffer utilizzato per effettuare il join tra due tabelle dove non è presente 
+# un indice (e non si può aggiungere, in quanto nel caso sarebbe la scelta migliore per aumentare le performance). 
+# Se il join è tra più tabelle verranno utilizzati vari buffer. Valori tipicamente buoni sono tra i 75 e i 250 KB.
+# Nota: MM ha 16M
+join_buffer_size = 16M
+
+# tmp_table_size e max_heap_table_size
+# Indicano lo spazio massimo utilizzato per per le tavole create in memoria (temporanee o attraverso MEMORY,
+# nel qual caso comanda solamente la seconda variabile). Consigliato impostarle allo stesso valore in quanto 
+# tra di loro comanda il valore minore delle due variabili.
+# N.B.: Se 100 - ((Created_tmp_disk_tables/Created_tmp_tables) * 100) è un numero distante da 100, aumentare 
+# il valore delle variabili in modo che più tabelle temporanee possano essere inserite in memoria.
+tmp_table_size = 512M
+max_heap_table_size = 512M
+
+# max_length_for_sort_data
+# Indica il limite oltre il quale viene utilizzato il primo algoritmo di filesort, Two passes, 
+# al posto del nuovo Single pass.
+# N.B.: Aumentando questa variabile, e quindi il numero di volte che viene utilizzato il nuovo algoritmo,
+# tipicamente aumenta l'utilizzo del disco e diminuisce il carico di CPU.
+# default = 1024
+max_length_for_sort_data = 1024 
+
+# ----------------------------------------------------------------------
+
+# CONCORRENZA
+
+# innodb_thread_concurrency 
+# Indica la concorrenza dei thread InnoDB, un valore consigliato è: numero di dischi + (numero di CPU *2)
+thread_concurrency = 24
+innodb_thread_concurrency = 24
+
+# ----------------------------------------------------------------------
+
+# MYISAM
+
+# key_buffer_size
+# Impostare questo valore tra il 5 - 50% della propria RAM in base all'utilizzo di MyISAM come Engine. 
+# Mantiene gli indici delle tabelle, quindi se possibile sarebbe meglio impostarlo alla dimensione totale di questi.
+# (Dimensione richiesta al momento attuale: 524M)
+key_buffer_size = 512M
+
+# myisam_sort_buffer_size
+# Questa variabile indica la dimensione del buffer utilizzato da mysql durante l'operazione di ordinamento di 
+# un indice MyISAM in seguito a uno dei seguenti comandi: REPAIR TABLE, ALTER TABLE, or CREATE INDEX. Attenzione 
+# ad utilizzare valori elevati, in quanto nel caso di più operazioni di questo tipo simultanee il server mysql 
+# potrebbe andare in crash in seguito all'esaurimento della memoria. Meglio ridurre questo valore e anteporre 
+# ad uno dei 3 comandi una modifica a questa variabile.
+myisam_sort_buffer_size = 8M
+
+# myisam_max_sort_file_size
+# Indica la dimensione massima di spazio su disco utilizzabile da mysql nella ricreazione di un indice MyISAM in
+# seguito a uno dei seguenti comandi: REPAIR TABLE, ALTER TABLE, or LOAD DATA INFILE. Nel caso questo spazio non
+# sia sufficiente, mysql utilizzera il key_buffer_size (più lento). Maggiore è il valore di questa variabile meglio è.
+myisam_max_sort_file_size = 320M
+
+# Ricerca full-text: lunghezza minima che deve avere una parola per venire indicizzata
+ft_min_word_len=3
+
+# ----------------------------------------------------------------------
+
+# INNODB
+
+# File separati tavole innodb
+innodb_file_per_table
+
+# innodb_flush_method
+# Consigliato impostare questa variabile a O_DIRECT per evitare il double buffering, 
+# ma solo nel caso si abbia una battery backed up RAID cache.
+innodb_flush_method = O_DIRECT
+
+# innodb_flush_log_at_trx_commit
+# Impostare questa variabile a 2 per non obbligare la scrittura dei dati ad ogni COMMIT di transazione o a 
+# ogni statement non transazionale. Velocizza molto a discapito della possibilità di perdere 1-2 secondi 
+# nel caso di crash completo della macchina. Nel caso di voler velocizzare maggiormente si può impostare la 
+# variabile a 0. Tuttavia è sconsigliato in quanto la perdità di dati potrebbe avvenire anche nel caso di 
+# crash del solo server mysql.
+#innodb_flush_log_at_trx_commit = 2
+
+# Note
+# For the greatest possible durability and consistency in a replication setup using InnoDB with transactions, 
+# you should use innodb_flush_log_at_trx_commit=1 and sync_binlog=1 in the master my.cnf file.
+innodb_flush_log_at_trx_commit = 1
+sync_binlog=1
+
+innodb_lock_wait_timeout = 3600
+
+# innodb_buffer_pool_size: dimensione della cache che innodb usa per
+# dati e indici. ha senso metterlo anche all'80% della memoria fisica.
+# (Dimensione richiesta al momento della configurazione: 16.2G)
+innodb_buffer_pool_size =  30G
+
+# innodb_additional_mem_pool_size: area dedicata alle strutture dati
+# interne di innodb. se non dovessere bastare verra' allocata altra
+# memoria e segnalato sul log di mysql.
+innodb_additional_mem_pool_size = 32M
+
+# innodb_log_file_size: dimensione dei file di log. renderli grandi
+# riduce la necessita' di fare checkpoint e quindi l'attivita' su
+# disco; allo stesso tempo allunga la durata di un eventuale recovery.
+# suggerito il 25% della buffer pool
+# Dimensione del "journal". Valori maggiori consentono un minor numero di scritture 
+# per sacralizzarlo. Il vade-mecum di MMFG suggerisce 256M
+innodb_log_file_size = 512M
+
+# innodb_log_buffer_size
+# Indica la dimensione del buffer che mysql utilizza per scrivere nel file di log delle transazioni. 
+# Valori tra 8M-16M sono sensati; nel caso si utilizzino dei BLOB particolarmente grandi meglio aumentare questa variabile.
+# N.B.: Non esagerare in quanto ogni secondo il buffer viene flushato su disco.
+innodb_log_buffer_size = 16M
+
+# innodb_log_group_home_dir
+# Indica la directory nella quale mantenere i log file di innodb
+#innodb_log_group_home_dir = /db/mysql/datalog/innolog
+
+# ----------------------------------------------------------------------
+
+# replica (as slave)
+# replicate-wild-ignore-table = magazzino.norep\_%
+# replicate-wild-ignore-table = magazzino.zz\_%
+# replicate-wild-do-table=magazzino.fr_%
+# replicate-do-table=magazzino.auth
+# replicate-ignore-table=magazzino.referenze
+# master-host = 192.168.xxx.xxx
+# master-user = macxraid
+# master-password = 3illati
+# master-port = 3306
+# slave-skip-errors=1062
+# relay-log=/rnd/apps/servers/mysql/data/retail-be-1-relay-bin
+
+# replica (as master)
+# server-id = 1966
+#log-bin = /rnd/apps/servers/mysql/data/wolverine-bin
+#expire-logs-days = 15
+
+[mysqldump]
+quick
+
+# max_allowed_packet 
+# Dovrebbe essere dimensionato simile al più grande BLOB utilizzato nel database.
+# N.B.: Tuttavia per semplicità lo si imposta a 1G, in quanto viene utilizzato solo in caso di necessità e 
+# rilasciato al termine della query
+max_allowed_packet = 1G
+
+[mysql]
+# Completamento automatico nomi tabelle e colonne
+# no-auto-rehash
+
+[isamchk]
+key_buffer = 256M
+sort_buffer_size = 256M
+read_buffer = 2M
+write_buffer = 2M
+
+[myisamchk]
+key_buffer = 256M
+sort_buffer_size = 256M
+read_buffer = 8M
+write_buffer = 8M
+
+[mysqlhotcopy]
+interactive-timeout
+
+[client]
+port = 3306
+socket = /tmp/mysql.sock
