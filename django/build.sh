@@ -17,31 +17,15 @@ set -x
 
 # -------------- #
 # Bash initialization
-cat >> /etc/profile.d/custom.sh << EOF
-alias rm='rm -i'
-alias cp='cp -i'
-alias mv='mv -i'
-
-alias egrep='egrep --color'
-alias fgrep='fgrep --color'
-alias grep='grep --color'
-
-alias which='alias | /usr/bin/which --tty-only --read-alias --show-dot --show-tilde'
-alias showdiff='diff -bBiy'
-
-alias ls='ls --color=auto --time-style=+"%d.%m.%Y %H:%M"'
-alias l.='ls -d .* --color=auto'
-alias ll='ls -l --color=auto'
-
-export PS1='\[\e[0;32m\][[${debian_chroot:+($debian_chroot)}\u@\h:\w]]\$\[\e[0m\] '
-EOF
+ln -sv /root/bash_profile.sh /etc/profile.d/
 # -------------- #
 
 # -------------- #
 # DT only initialization, executed if invoked with:
 #   docker build --build-arg HTTP_PROXY=http://proxy.mmfg.it:8080 -t <image>:<tag>
 if [ ! -z ${HTTP_PROXY+x} ]; then
-  cat >> /etc/profile.d/custom.sh << EOF
+  cat >> /root/bash_profile.sh << EOF
+
 export http_proxy=${HTTP_PROXY}
 export https_proxy=\$http_proxy
 export ftp_proxy=\$http_proxy
@@ -49,12 +33,13 @@ export HTTP_PROXY=\$http_proxy
 export HTTPS_PROXY=\$http_proxy
 export FTP_PROXY=\$http_proxy
 export no_proxy=
+
 EOF
 fi
 # -------------- #
 
 # -------------- #
-source /etc/profile.d/custom.sh
+source /root/bash_profile.sh
 # -------------- #
 
 # -------------- #
