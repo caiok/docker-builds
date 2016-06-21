@@ -45,7 +45,7 @@ source /root/bash_profile.sh
 # -------------- #
 # Installations
 apt-get update -y
-apt-get install -y nano less
+apt-get install -y nano less sudo
 apt-get install -y python
 # -------------- #
 
@@ -56,6 +56,7 @@ apt-get install -y --force-yes openssh-server
 mkdir /var/run/sshd
 echo 'root:test' | chpasswd
 sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+sed -i 's/#AuthorizedKeysFile/AuthorizedKeysFile/' /etc/ssh/sshd_config
 sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 # -------------- #
 
@@ -70,6 +71,20 @@ cd -
 chmod 700 /root/.ssh
 chmod 600 /root/.ssh/authorized_keys
 sed -i 's/#AuthorizedKeysFile/AuthorizedKeysFile/' /etc/ssh/sshd_config
+# -------------- #
+
+# -------------- #
+# This installation lacks the "test" user used by Linux Academy course.
+# If you want to create such user, do the following:
+# - # adduser test
+# - # chpasswd test
+# - # visudo
+# -   (under "root        ALL=(ALL:ALL) ALL"
+#        add "test        ALL=(ALL:ALL) ALL"
+# - # su -l test
+# - $ ssh-keygen
+# - $ ssh-copy-id test@0.0.0.0
+# - $ ssh test@0.0.0.0 (just for make sure)
 # -------------- #
 
 # -------------- #
