@@ -46,7 +46,7 @@ source /root/bash_profile.sh
 # Installations
 apt-get update -y
 apt-get install -y nano less sudo
-apt-get install -y python
+apt-get install -y python ansible
 # -------------- #
 
 # -------------- #
