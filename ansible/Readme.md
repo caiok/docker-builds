@@ -1,8 +1,8 @@
 # Django Docker
 
-Simple ansible client for testing purposes.
+Simple Ansible client for testing purposes.
 
-Important: remember to add the ansible server public key in authorized_keys before building up the image
+Important: remember to add the Ansible client(s) public key in authorized_keys before building up the image
 
 ## Current Version
 
