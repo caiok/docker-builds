@@ -1,13 +1,13 @@
-# Django Docker
+# Hadoop
 
-Simple Ansible client for testing purposes.
+Hadoop installation for testing purposes.
 
-Important: remember to add the Ansible client(s) public key in authorized_keys before building up the image
+Important: remember to add the correct public key in authorized_keys before building up the image
 
 ## Current Version
 
-- Docker Image: debian:latest
-- Python: 2.7
+- Docker Image: alpine:latest
+- Hadoop: 
 
 ### Build
 

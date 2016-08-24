@@ -1,13 +1,18 @@
 FROM alpine:latest
 MAINTAINER CaioK
 
+#ARG HADOOP_VERSION=1.2.1
+#ARG HADOOP_VERSION=2.5.2
+#ARG HADOOP_VERSION=2.6.4
+ARG HADOOP_VERSION=2.7.2
+
+ARG TAR=hadoop-$HADOOP_VERSION.tar.gz
+
 ADD * /root/
 
 VOLUME /repo
 
-RUN apk update && \
-    apk add bash && \
-    /root/build.sh
+RUN /bin/sh /root/build.sh
 
 EXPOSE 22
 
