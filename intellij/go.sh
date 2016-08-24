@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
 # --------------------------------------- #
+# Initial checks
+# --------------------------------------- #
 USAGE="
 $(basename "$0") [-h | container_name]
 
@@ -9,11 +11,14 @@ where:
     container_name: Container name (default ${CONTAINER_NAME})
 "
 
+SCRIPT_DIR=$(dirname "$(readlink -f $0)")
+
 # Check whether the script was executed within its directory or not
-if [[ $(dirname "$0") != $PWD ]]
+if [[ ${SCRIPT_DIR} != $(pwd) ]]
 then
 	echo
-	echo "The script must be run within its directory (cd to the script directory and then executes it with ./$(basename $0)"
+	echo "The script must be run within its directory (cd to the script directory and then executes it with ./$(basename $0))"
+	echo "( ${SCRIPT_DIR} != $(pwd) )"
 	echo
 	exit
 fi
@@ -27,16 +32,18 @@ fi
 # --------------------------------------- #
 
 # --------------------------------------- #
+# Configurations
+# --------------------------------------- #
 # Set the workspace that should be exported to the docker container
 WORKSPACE=$HOME/Desktop/workspace/
 
 # Decide image name concatenating user_name + build_dir
-IMAGE="${USER}/$(basename $(dirname $0)):latest"
+IMAGE="${USER}/$(basename ${SCRIPT_DIR}):latest"
 
 # Check whether the container name was provided"
 if [[ ( "$1" == "" ) ]]
 then
-	CONTAINER=$(basename $(dirname $0))
+	CONTAINER=$(basename ${SCRIPT_DIR})
 else
 	CONTAINER=$1
 fi
@@ -49,10 +56,12 @@ echo
 # --------------------------------------- #
 
 # --------------------------------------- #
+# Build (if necessary)
+# --------------------------------------- #
 # Echo if the image is already present
-echo "> docker images {IMAGE}"
-docker images {IMAGE}
-image_ready="$(docker images debian:latest1 | grep -v REPOSITORY)"
+echo "> docker images ${IMAGE}"
+docker images ${IMAGE}
+image_ready="$(docker images ${IMAGE} | grep -v REPOSITORY)"
 echo
 
 # If image is not present, build it
@@ -60,6 +69,7 @@ if [[ "${image_ready}" == "" ]]
 then
 	echo "Image not ready. Start building process..."
 	echo
+	exit
 	echo "docker build -t ${IMAGE} ."
 	docker build -t ${IMAGE} .
 	build_result=$?
@@ -74,6 +84,8 @@ fi
 # --------------------------------------- #
 
 # --------------------------------------- #
+# Container creation (if necessary)
+# --------------------------------------- #
 # Echo if the container is already present
 echo "> docker ps -a --filter \"name=${CONTAINER}\""
 docker ps -a --filter "name=${CONTAINER}"
@@ -81,17 +93,23 @@ container_ready=$(docker ps -a --filter "name=${CONTAINER}" | grep -v 'CONTAINER
 echo
 
 # If the container is not present, create it
-if [[ ${container_ready} != 0 ]]
+if [[ "${container_ready}" == "" ]]
 then
+	echo "Creating the container..."
+	set -x
 	docker run -i -t -d \
 			   --name "${CONTAINER}" \
 			   -e DISPLAY=$DISPLAY \
 			   -v /tmp/.X11-unix:/tmp/.X11-unix \
 			   -v ${WORKSPACE}:/workspace \
 			   ${IMAGE}
+	set +x
+	echo
 fi
 # --------------------------------------- #
 
+# --------------------------------------- #
+# Container start (if necessary)
 # --------------------------------------- #
 # Try to start the container (raise an error if not present)
 echo "> docker start ${CONTAINER}"
@@ -108,19 +126,24 @@ fi
 # --------------------------------------- #
 
 # --------------------------------------- #
+# Print container informations
+# --------------------------------------- #
 # Container IP Address
 IP_ADDRESS=$(docker inspect ansible_1 | grep \"IPA | head -n1 | awk -F '"' '{ print $4 }')
 
 # Echo some infos
-echo
+echo -e "---------------------------------------"
 echo -e "Image name: \e[1m${IMAGE}\e[0m"
 echo -e "Container name: \e[1m${CONTAINER}\e[0m"
 echo -e "IP address: \e[1m${IP_ADDRESS}\e[0m"
+echo -e "---------------------------------------"
 echo
 # --------------------------------------- #
 
 # --------------------------------------- #
+# Execute a shell on the container
+# --------------------------------------- #
 # At last execute a shell on the created container
-docker exec -i -t 
-
+set -x
+docker exec -i -t ${CONTAINER} /bin/bash --login
 # --------------------------------------- #
