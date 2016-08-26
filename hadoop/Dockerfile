@@ -16,4 +16,4 @@ RUN /bin/sh /root/build.sh
 
 EXPOSE 22
 
-ENTRYPOINT /root/run.sh
+ENTRYPOINT [ "/bin/sh", "/root/run.sh" ]

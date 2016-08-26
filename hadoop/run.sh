@@ -4,7 +4,8 @@
 # ...
 
 # Services start
-service ssh start
+#service ssh start
+/usr/sbin/sshd
 
 # Run Bash
 /bin/bash -l
