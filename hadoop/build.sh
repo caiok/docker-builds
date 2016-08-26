@@ -47,10 +47,21 @@ source /root/bash_profile.sh
 # -------------- #
 # Installations
 apk update
-apk add bash nano less sudo wget tar grep
-# Fancy stuff
-apk add util-linux pciutils usbutils coreutils binutils findutils
-#apk add man man-pages bash-doc bash-completion
+apk add bash nano less sudo wget tar grep which
+# Fancy stuff (optional)
+if [ ! -z ${ADD_UTILS+x} ]; then
+	apk add util-linux pciutils usbutils coreutils binutils findutils
+	#apk add man man-pages bash-doc bash-completion
+fi
+# -------------- #
+
+# -------------- #
+# Hadoop installations
+wget -t 100 --retry-connrefused -O "$TAR" "http://www.apache.org/dyn/closer.lua?filename=hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-$HADOOP_VERSION.tar.gz&action=download"
+tar zxf "$TAR"
+mv hadoop-$HADOOP_VERSION hadoop
+rm -fv "$TAR"
+{ rm -rf hadoop/share/doc; : ; }
 # -------------- #
 
 # -------------- #
@@ -60,9 +71,16 @@ apk add openssh
 cp -a /etc/ssh /etc/ssh.cache && \
 mkdir -p /var/run/sshd
 echo 'root:test' | chpasswd
-echo -e "\nPort 22\n" >> /etc/ssh/sshd_config
-sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-sed -i 's/#AuthorizedKeysFile/AuthorizedKeysFile/' /etc/ssh/sshd_config
+
+cat << _EOF_ >> /etc/ssh/sshd_config
+# ---- #
+Port 22
+PermitRootLogin yes
+AuthorizedKeysFile .ssh/authorized_keys
+#session optional pam_loginuid.so
+# ---- #
+_EOF_
+
 #sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
 
 # Generate Host keys, if required
@@ -81,7 +99,6 @@ ln -s authorized_keys auth_keys
 cd -
 chmod 700 ~root/.ssh
 chmod 600 ~root/.ssh/authorized_keys
-sed -i 's/#AuthorizedKeysFile/AuthorizedKeysFile/' /etc/ssh/sshd_config
 # -------------- #
 
 # -------------- #

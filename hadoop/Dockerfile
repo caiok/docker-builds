@@ -8,12 +8,22 @@ ARG HADOOP_VERSION=2.7.2
 
 ARG TAR=hadoop-$HADOOP_VERSION.tar.gz
 
+ENV PATH $PATH:/hadoop/bin
+
+WORKDIR /
+
 ADD * /root/
 
 VOLUME /repo
 
 RUN /bin/sh /root/build.sh
 
+COPY conf/core-site.xml /hadoop/etc/hadoop/
+COPY conf/hdfs-site.xml /hadoop/etc/hadoop/
+COPY conf/yarn-site.xml /hadoop/etc/hadoop/
+COPY conf/mapred-site.xml /hadoop/etc/hadoop/
+
 EXPOSE 22
+EXPOSE 8020 8042 8088 9000 10020 19888 50010 50020 50070 50075 50090
 
 ENTRYPOINT [ "/bin/sh", "/root/run.sh" ]
