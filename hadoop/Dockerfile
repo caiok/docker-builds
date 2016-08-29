@@ -1,4 +1,5 @@
-FROM alpine:latest
+#FROM alpine:latest
+FROM frolvlad/alpine-oraclejdk8
 MAINTAINER CaioK
 
 #ARG HADOOP_VERSION=1.2.1
@@ -22,6 +23,7 @@ COPY conf/core-site.xml /hadoop/etc/hadoop/
 COPY conf/hdfs-site.xml /hadoop/etc/hadoop/
 COPY conf/yarn-site.xml /hadoop/etc/hadoop/
 COPY conf/mapred-site.xml /hadoop/etc/hadoop/
+COPY profile.d/hadoop.sh /etc/profile.d/
 
 EXPOSE 22
 EXPOSE 8020 8042 8088 9000 10020 19888 50010 50020 50070 50075 50090
